@@ -64,7 +64,9 @@ class ReminderInterface:
         validateBtn = ctk.CTkButton(master=buttonsFrame, text="Valider", fg_color=Colors.darkBtnColor, hover_color=Colors.hghColor, command=self.validate)
         validateBtn.grid()
 
-        # self.root.protocol("WM_DELETE_WINDOW", self.root.destroy)
+        self.root.after(201, lambda :self.root.iconbitmap('icon.ico'))
+        
+        self.root.protocol("WM_DELETE_WINDOW", self.OnClose)
 
 
     def changeAmountStatut(self):
@@ -75,12 +77,20 @@ class ReminderInterface:
 
 
     def validate(self):
-        if (self.answer == "Non"):
+        answer = self.answer.get()
+        amount = self.amountInput.get()
+        self.root.destroy()
+        if (answer == "Non"):
             self.service.validateReminder(self.reminder['id'], 0)
         else:
-            self.service.validateReminder(self.reminder['id'], self.amountInput.get())
-        print(self.answer.get())
+            self.service.validateReminder(self.reminder['id'], amount)
+        #print(self.answer.get())
+        
+    
+    def OnClose(self):
+        self.service.EndOfReminder(self.reminder['id'])
         self.root.destroy()
+        
 
 
 if __name__ == '__main__':

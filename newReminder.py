@@ -126,6 +126,8 @@ class NewReminder(ctk.CTkToplevel):
                                     command= self.validate)                                      
         validateBtn.pack(side="left", padx=(12,0))
 
+        self.root.after(201, lambda :self.root.iconbitmap('icon.ico'))
+
     def validate(self):
         self.service.save(self.nameInput.get(), 
                           self.hourStartSpinbox.get(), 

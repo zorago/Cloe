@@ -4,7 +4,7 @@ from geometryCalcutator import set
 from colors import Colors
 from reminderService import ReminderService
 from newReminder import NewReminder
-from reminderInterface import ReminderInterface as reminderInterface
+from tkinter import PhotoImage
 
 
 class ResumeInterface:
@@ -12,6 +12,9 @@ class ResumeInterface:
     service = None
     root = None
     newReminderWindow = None
+    currentMeasureRefs = {}
+    countRefs = {}
+    icon = None
 
     def __init__(self): 
 
@@ -19,17 +22,20 @@ class ResumeInterface:
         self.service = ReminderService()
         self.service.root = self.root
         self.service.parent = self
+        self.icon = PhotoImage(file='icon.png')
         self.open()
         
 
     def open(self):
         # Window
         self.root.title("rememberMe")
+        
         self.root.geometry(set(370, 400))
         self.root.resizable(False,False)
         self.root.grid_rowconfigure(0, weight=1)
         self.root.grid_rowconfigure(1, weight=2)
         self.root.grid_columnconfigure(0, weight=1)
+        
 
         # Title
         headFrame = ctk.CTkFrame(master=self.root, fg_color="transparent")
@@ -51,7 +57,9 @@ class ResumeInterface:
             self.newTab(key)
 
         self.root.bind("<<OnReminder>>", self.service.openReminder)
+        self.root.bind("<<OnCurrentMeasureChange>>", self.OnCurrentMeasureChange)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
+        self.root.after(201, lambda :self.root.iconbitmap('icon.ico'))
         self.root.mainloop()
         
     def newTab(self, key):
@@ -67,9 +75,11 @@ class ResumeInterface:
 
         countTitle=ctk.CTkLabel(master=self.resumeTab.tab(self.service.reminders[key]['name']), text=f"Nombre de rappel à venir : {self.service.reminders[key]['_remaining']}")
         countTitle.grid(row=3, sticky="w", padx=(24,0))
+        self.countRefs[key] = countTitle
 
         measureTitle=ctk.CTkLabel(master=self.resumeTab.tab(self.service.reminders[key]['name']), text=f"Progression actuelle : {self.service.reminders[key]['_currentMeasure']}")
         measureTitle.grid(row=4, sticky="w", padx=(24,0))
+        self.currentMeasureRefs[key] = measureTitle
 
         deleteBtn = ctk.CTkButton(master=self.resumeTab.tab(self.service.reminders[key]['name']), text=f"Supprimer ce rappel", fg_color=Colors.darkBtnColor, hover_color=Colors.hghColor, 
                                 command= lambda id=key : self.deleteTab(id))
@@ -84,8 +94,14 @@ class ResumeInterface:
 
 
     def deleteTab(self,id):
+        self.resumeTab.delete(self.service.reminders[id]['name'])
         self.service.delete(id)
-        self.resumeTab.delete(self.resumeTab.get())
+        
+    
+    def OnCurrentMeasureChange(self, event):
+        for key in self.currentMeasureRefs:
+            self.currentMeasureRefs[key].configure(text=f"Progression actuelle : {self.service.reminders[key]['_currentMeasure']}")
+            self.countRefs[key].configure(text=f"Nombre de rappel à venir : {self.service.reminders[key]['_remaining']}")
 
 
     def close(self):
@@ -95,6 +111,6 @@ class ResumeInterface:
         #PLUS DESACTIVER SCHEDULER
 
 
-if __name__ == '__main__':
-    ResumeInterface()
+
+ResumeInterface()
     
