@@ -4,6 +4,8 @@ from geometryCalcutator import set
 from colors import Colors
 from reminderService import ReminderService
 from newReminder import NewReminder
+from reminderInterface import ReminderInterface as reminderInterface
+
 
 class ResumeInterface:
 
@@ -13,10 +15,12 @@ class ResumeInterface:
 
     def __init__(self): 
 
+        self.root =ctk.CTk()
         self.service = ReminderService()
         self.service.root = self.root
-        self.root =ctk.CTk()
+        self.service.parent = self
         self.open()
+        
 
     def open(self):
         # Window
@@ -44,30 +48,32 @@ class ResumeInterface:
         self.resumeTab.grid_columnconfigure(0, weight=1)
 
         for key in self.service.reminders:
+            self.newTab(key)
 
-            self.resumeTab.add(self.service.reminders[key]['name'])
-
-            startTitle=ctk.CTkLabel(master=self.resumeTab.tab(self.service.reminders[key]['name']), 
-                                    text=f"A commencé à {self.service.reminders[key]['startTime'].strftime("%H")} h {self.service.reminders[key]['startTime'].strftime("%M")}")
-            startTitle.grid(row=1, sticky="w", padx=(24,0), pady=(24,0))
-
-            endTitle=ctk.CTkLabel(master=self.resumeTab.tab(self.service.reminders[key]['name']), 
-                                text=f"Se termine à {self.service.reminders[key]['endTime'].strftime("%H")} h {self.service.reminders[key]['endTime'].strftime("%M")}")
-            endTitle.grid(row=2, sticky="w", padx=(24,0))
-
-            countTitle=ctk.CTkLabel(master=self.resumeTab.tab(self.service.reminders[key]['name']), text=f"Nombre de rappel à venir : {self.service.reminders[key]['_remaining']}")
-            countTitle.grid(row=3, sticky="w", padx=(24,0))
-
-            measureTitle=ctk.CTkLabel(master=self.resumeTab.tab(self.service.reminders[key]['name']), text=f"Progression actuelle : {self.service.reminders[key]['_currentMeasure']}")
-            measureTitle.grid(row=4, sticky="w", padx=(24,0))
-
-            deleteBtn = ctk.CTkButton(master=self.resumeTab.tab(self.service.reminders[key]['name']), text=f"Supprimer ce rappel", fg_color=Colors.darkBtnColor, hover_color=Colors.hghColor, 
-                                    command= lambda id=key : self.deleteTab(id))
-            deleteBtn.place(x=275, y=237, anchor="se")
-
-
+        self.root.bind("<<OnReminder>>", self.service.openReminder)
         self.root.protocol("WM_DELETE_WINDOW", self.close)
         self.root.mainloop()
+        
+    def newTab(self, key):
+        self.resumeTab.add(self.service.reminders[key]['name'])
+
+        startTitle=ctk.CTkLabel(master=self.resumeTab.tab(self.service.reminders[key]['name']), 
+                                text=f"A commencé à {self.service.reminders[key]['startTime'].strftime("%H")} h {self.service.reminders[key]['startTime'].strftime("%M")}")
+        startTitle.grid(row=1, sticky="w", padx=(24,0), pady=(24,0))
+
+        endTitle=ctk.CTkLabel(master=self.resumeTab.tab(self.service.reminders[key]['name']), 
+                            text=f"Se termine à {self.service.reminders[key]['endTime'].strftime("%H")} h {self.service.reminders[key]['endTime'].strftime("%M")}")
+        endTitle.grid(row=2, sticky="w", padx=(24,0))
+
+        countTitle=ctk.CTkLabel(master=self.resumeTab.tab(self.service.reminders[key]['name']), text=f"Nombre de rappel à venir : {self.service.reminders[key]['_remaining']}")
+        countTitle.grid(row=3, sticky="w", padx=(24,0))
+
+        measureTitle=ctk.CTkLabel(master=self.resumeTab.tab(self.service.reminders[key]['name']), text=f"Progression actuelle : {self.service.reminders[key]['_currentMeasure']}")
+        measureTitle.grid(row=4, sticky="w", padx=(24,0))
+
+        deleteBtn = ctk.CTkButton(master=self.resumeTab.tab(self.service.reminders[key]['name']), text=f"Supprimer ce rappel", fg_color=Colors.darkBtnColor, hover_color=Colors.hghColor, 
+                                command= lambda id=key : self.deleteTab(id))
+        deleteBtn.place(x=275, y=237, anchor="se")
 
     def openNewReminder(self):
         if ((self.newReminderWindow == None) or (not self.newReminderWindow.winfo_exists())):
@@ -91,3 +97,4 @@ class ResumeInterface:
 
 if __name__ == '__main__':
     ResumeInterface()
+    

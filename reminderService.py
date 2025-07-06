@@ -13,17 +13,24 @@ class ReminderService:
     reminders: dict[int, ReminderModel] = None
     scheduler = None
     root:ctk.CTk = None
+    CurrentReminder = []
+    parent = None
 
     def __init__(self):
         self.scheduler = BackgroundScheduler()
         self.scheduler.start()
+        self.scheduler.add_job(self.cleanReminders, "interval", seconds=300)
 
         try:
             with open("data.pkl", "rb") as data:
                 self.reminders = pickle.load(data)
 
             for key in self.reminders:
-                print(key, '=>', self.reminders[key])
+                if self.reminders[key]['_creationDate'] < dt.date.today() or self.reminders[key]['_remaining'] == 0:
+                    self.delete(key)
+                else:
+                    print(key, '=>', self.reminders[key])
+                    self.reminders[key]["_jobID"] = self.scheduler.add_job(self.temp, "interval", seconds=self.reminders[key]["_delay"], next_run_time=dt.datetime.combine(dt.datetime.today().date(), self.reminders[key]["startTime"]), args=[self.reminders[key]]).id
 
         except:
             message("Les datas n'ont pas pu être récupérées")
@@ -94,17 +101,21 @@ class ReminderService:
             "count":count, 
             "measure":measure,
             "_remaining":count,
-            "_currentMeasure":0
+            "_currentMeasure":0,
+            "_jobID":None,
+            "_creationDate":dt.date.today()
         }
 
         newReminder["_delay"] = self._setDelay(newReminder["startTime"], newReminder["endTime"], newReminder["count"])
         self.reminders[newId] = newReminder
+        self.parent.newTab(newId)
+        
 
         with open("data.pkl", "wb") as data:
             pickle.dump(self.reminders, data)
 
 
-        self.scheduler.add_job(self.openReminder, "interval", seconds=newReminder["_delay"], next_run_time=dt.datetime.combine(dt.datetime.today().date(), newReminder["startTime"]), args=[newReminder])
+        newReminder["_jobID"] = self.scheduler.add_job(self.temp, "interval", seconds=newReminder["_delay"], next_run_time=dt.datetime.combine(dt.datetime.today().date(), newReminder["startTime"]), args=[newReminder]).id
 
         validationMessage(f"Le rappel \"{name}\" a bien été créé :)", parent)
 
@@ -122,6 +133,9 @@ class ReminderService:
 
                 return
     
+    def temp(self, reminder):
+        self.CurrentReminder.append(reminder)
+        self.root.event_generate("<<OnReminder>>")
 
     def _generateId(self):
         ids = []
@@ -141,29 +155,48 @@ class ReminderService:
             reminder["_currentMeasure"] += value
         except:
             message("La valeur rentrée doit être un chiffre entier")
-            return
+            self.CurrentReminder.append(reminder)
+            self.openReminder()
 
 
-    def openReminder(self, reminder:ReminderModel):
-
-        self.root.after(0, reminderInterface(reminder, self))
+    def openReminder(self, *arg, **kwarg):
+        reminder = self.CurrentReminder.pop()
+        reminderInterface(reminder, self)
         
         remaining = reminder["_remaining"] - 1
 
         if (remaining == 0 ):
             try:
-                self.scheduler.remove_job(reminder["id"])
-            except:
+                self.scheduler.remove_job(reminder["_jobID"])
+            except Exception as e:
                 message("Echec de l'ouverture du rappel")
+                print(e)
+            try:
+                id = None
+                for key in self.reminders:
+                    if key == reminder['id']:
+                        id = key
+                if id != None:
+                    self.parent.deleteTab(id)
+            except Exception as e:
+                message("Echec de la suppression d'un rappel terminé !")
+                print(e)
+
         
         else : 
             reminder["_remaining"] = remaining
-            
+        
 
-    
     def _setDelay(self, start:dt.time, end:dt.time, count:int):
         startMin = (start.hour * 60 + start.minute) *60
         endMin = (end.hour * 60 + end.minute) *60
 
         return ((endMin-startMin)//count)+1
+    
+    def cleanReminders(self):
+        if dt.time(0,0,0) < dt.datetime.now().time() < dt.time(0,6,0):
+            for key in self.reminders:
+                    if self.reminders[key]['_creationDate'] < dt.date.today() or self.reminders[key]['_remaining'] == 0:
+                        self.scheduler.remove_job(self.reminders[key]["_jobID"])
+                        self.delete(key)
 

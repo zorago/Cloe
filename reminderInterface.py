@@ -71,14 +71,14 @@ class ReminderInterface:
         if (self.answer.get() == "Non"):
             self.amountInput.configure(state="disabled", text_color="grey", border_color="grey")
         else:
-            self.amountInput.configure(state="normal", text_color="white", border_color=Colors.btnColor)
+            self.amountInput.configure(state="normal", text_color="black", border_color=Colors.btnColor)
 
 
     def validate(self):
-        # if (self.answer == "Non"):
-        #     self.service.validateReminder(self.reminder, 0)
-        # else:
-        #     self.service.validateReminder(self.reminder, self.amountInput.get())
+        if (self.answer == "Non"):
+            self.service.validateReminder(self.reminder['id'], 0)
+        else:
+            self.service.validateReminder(self.reminder['id'], self.amountInput.get())
         print(self.answer.get())
         self.root.destroy()
 
